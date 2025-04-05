@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Park Vehicle</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #fff;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    /* Modal Styles */
+    #qrModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    #qrModalContent {
+      background: white;
+      padding: 20px;
+      text-align: center;
+      border-radius: 10px;
+    }
+
+    #qrModal img {
+      width: 200px;
+      height: 200px;
+      margin: 20px 0;
+    }
+
+    #qrModal button {
+      width: auto;
+      padding: 10px 20px;
+    }
+
+    /* Cash amount input style */
+    #amountPaidContainer {
+      display: none;
+    }
+
+    /* Cash options container */
+    #fixedAmountContainer {
+      display: none;
+      text-align: center;
+    }
+
+    .cash-option {
+      margin: 10px;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .cash-option:hover {
+      background-color: #45a049;
+    }
+
+    /* Confirmation Message for Cash Payment */
+    #paymentConfirmation {
+      display: none;
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+
+  <h2>Welcome, <span id="user"></span>!</h2>
+
+  <label for="vehicleNumber">Vehicle Number:</label>
+  <input type="text" id="vehicleNumber" placeholder="e.g., ABC1234">
+
+  <label for="vehicleBrand">Vehicle Brand:</label>
+  <select id="vehicleBrand">
+    <option value="Toyota">Toyota</option>
+    <option value="Honda">Honda</option>
+    <option value="Hyundai">Hyundai</option>
+    <option value="4x4">4x4</option>
+    <option value="Ford">Ford</option>
+    <option value="Chevrolet">Chevrolet</option>
+  </select>
+
+  <label for="vehicleType">Vehicle Type:</label>
+  <select id="vehicleType">
+    <option value="Car">Car</option>
+    <option value="Bike">Bike</option>
+    <option value="Truck">Truck</option>
+  </select>
+
+  <label for="paymentMethod">Payment Method:</label>
+  <select id="paymentMethod" onchange="toggleAmountInput()">
+    <option value="Cash">Cash</option>
+    <option value="Online">Online Payment</option>
+  </select>
+
+  <!-- Fixed Cash Amount Options -->
+  <div id="fixedAmountContainer">
+    <p>Select the amount you will pay:</p>
+    <button class="cash-option" onclick="setFixedAmount(50)">₱50</button>
+    <button class="cash-option" onclick="setFixedAmount(100)">₱100</button>
+    <button class="cash-option" onclick="setFixedAmount(200)">₱200</button>
+  </div>
+
+  <!-- Payment Confirmation Message -->
+  <div id="paymentConfirmation">
+    <p>You have selected ₱<span id="selectedAmount"></span>.</p>
+    <button onclick="parkVehicle()">Proceed to Payment</button>
+  </div>
+
+  <button id="parkButton" onclick="checkPaymentMethod()">Park Vehicle</button>
+
+  <!-- QR Code Modal -->
+  <div id="qrModal">
+    <div id="qrModalContent">
+      <h3>Scan QR Code to Pay</h3>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SimulatedPayment" alt="QR Code">
+      <br>
+      <button onclick="completePayment()">I've Paid</button>
+    </div>
+  </div>
+
+  <script>
+    const username = localStorage.getItem("currentUser");
+    if (!username) window.location.href = "index.html";
+    document.getElementById("user").textContent = username;
+
+    let receipt = {};
+    let selectedAmount = 0;
+
+    function toggleAmountInput() {
+      const paymentMethod = document.getElementById("paymentMethod").value;
+      const fixedAmountContainer = document.getElementById("fixedAmountContainer");
+      const paymentConfirmation = document.getElementById("paymentConfirmation");
+
+      if (paymentMethod === "Cash") {
+        fixedAmountContainer.style.display = "block";  // Show fixed amount options
+        paymentConfirmation.style.display = "none";   // Hide payment confirmation message
+      } else {
+        fixedAmountContainer.style.display = "none";  // Hide fixed amount options
+        paymentConfirmation.style.display = "none";   // Hide payment confirmation message
+      }
+    }
+
+    function setFixedAmount(amount) {
+      selectedAmount = amount;
+      document.getElementById("selectedAmount").textContent = selectedAmount;
+      document.getElementById("fixedAmountContainer").style.display = "none";  // Hide fixed amount options
+      document.getElementById("paymentConfirmation").style.display = "block";  // Show confirmation message
+    }
+
+    function checkPaymentMethod() {
+      const paymentMethod = document.getElementById("paymentMethod").value;
+
+      if (paymentMethod === "Cash") {
+        const fixedAmountContainer = document.getElementById("fixedAmountContainer");
+        fixedAmountContainer.style.display = "block"; // Show cash amount options
+      } else {
+        parkVehicle(); // Proceed if payment is not cash
+      }
+    }
+
+    function parkVehicle() {
+      const number = document.getElementById("vehicleNumber").value.trim();
+      const brand = document.getElementById("vehicleBrand").value;
+      const type = document.getElementById("vehicleType").value;
+      const payment = document.getElementById("paymentMethod").value;
+      
+      if (!number) {
+        alert("Please enter vehicle number.");
+        return;
+      }
+
+      // Cash payment logic (calculate change)
+      let change = 0;
+      if (payment === "Cash") {
+        if (selectedAmount <= 0) {
+          alert("Please select a valid cash amount.");
+          return;
+        }
+
+        // Simulated parking fee (you can change this)
+        const parkingFee = 50;
+        change = selectedAmount - parkingFee;
+        if (change < 0) {
+          alert("Amount paid is less than parking fee.");
+          return;
+        }
+      }
+
+      // Create the receipt data
+      receipt = {
+        user: username,
+        vehicleNumber: number,
+        vehicleBrand: brand,
+        vehicleType: type,
+        paymentMethod: payment,
+        time: new Date().toLocaleString(),
+        amountPaid: selectedAmount,
+        change: change
+      };
+
+      if (payment === "Online") {
+        // Show QR modal
+        document.getElementById("qrModal").style.display = "flex";
+      } else {
+        // Cash payment - go directly
+        localStorage.setItem("lastReceipt", JSON.stringify(receipt));
+        window.location.href = "receipt.html";
+      }
+    }
+
+    function completePayment() {
+      // Simulate storing and redirecting
+      localStorage.setItem("lastReceipt", JSON.stringify(receipt));
+      window.location.href = "receipt.html";
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Parking System</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f4f4f4; padding: 50px; }
+    input, button { padding: 10px; width: 80%; margin: 10px 0; }
+    button { background: #4CAF50; color: white; border: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Login to Parking System</h2>
+  <input type="text" id="username" placeholder="Enter username"><br>
+  <button onclick="login()">Login</button>
+
+  <script>
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      if (username === "") {
+        alert("Please enter username.");
+        return;
+      }
+      localStorage.setItem("currentUser", username);
+      window.location.href = "parking.html";
+    }
+  </script>
+</body>
+</html>
